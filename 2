@@ -1,0 +1,91 @@
+// Sample Code.....
+#define WIN32_LEARN_AND_MEAN
+
+#include <conio.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <malloc.h>
+#include <memory.h>
+#include <direct.h>
+
+
+struct dat
+{ // total 25byte
+    unsigned long offset; // 4byte
+    char name[13]; // 13byte
+    unsigned long size; // 4byte;
+    char *data; // 4byte;
+};
+
+
+int main(int argc, char **argv)
+{
+    int value;
+    char input[512];
+    printf(" * Select mode\n  1: Pack\n  2: Unpack\n Choose: ");
+    scanf("%d", &value);
+    if(value == 1)
+    {
+        printf("\n\n *Mode: Pack\n  Datname: ");
+        scanf("%s", input);
+        dat_pack(input);
+    }
+    else if(value == 2)
+    {
+        printf("\n\n *Mode: Unpack\n  Datname: ");
+        scanf("%s", input);
+        dat_unpack(input);
+    }
+    printf("\nPress any key to continue\n");
+    fflush(stdin);
+    getch();
+    return 0;
+}
+
+
+int dat_unpack(char *file_name)
+{
+    FILE *fp;
+    fp = fopen(file_name, "rb");
+
+    if (fp == 0)
+    {
+        printf(" File does not exist: %s\n", file_name);
+        return 0;
+    }
+    else
+    {
+        long i;
+        long len;
+        long total;
+        struct dat *dat;
+        fread(&total, 4, 1, fp);
+        len = sizeof(struct dat);
+        dat = malloc(len*total);
+        memset(dat, 0, len*total);
+        *strstr(file_name, ".") = 0; // cute trick :p
+
+        printf("\n reading Infomation... ");
+
+        for (i = 0; i<total; i++)
+        {
+            fread(&(dat[i]), 17, 1, fp);
+            if (i > 0) dat[i - 1].size = dat[i].offset - dat[i - 1].offset;
+        }
+
+        printf("ok.\n Total %d data(s) in dat file.\n", --total);
+
+        for (i = 0; i<total; i++)
+        {
+            file_write(&(dat[i]), fp, file_name);
+        }
+
+        printf(" Unpack Complete!\n");
+
+        free(dat);
+        fclose(fp);
+    }
+
+    return 1;
+}
